@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PlantSeg host_gold annotation</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #11151a;
+      --panel: #1a2028;
+      --line: #34404d;
+      --text: #edf2f7;
+      --muted: #aeb9c5;
+      --green: #38c782;
+      --red: #ff5c70;
+      --blue: #4ea1ff;
+      --yellow: #f0ba4f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 16px;
+      background: rgba(17, 21, 26, 0.96);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(8px);
+    }
+    h1 { margin: 0; font-size: 17px; }
+    .stats { color: var(--muted); }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 14px;
+      padding: 14px;
+    }
+    .viewer, .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+    .viewer {
+      min-height: 600px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      overflow: auto;
+    }
+    #canvasWrap {
+      position: relative;
+      touch-action: none;
+      background: #090b0e;
+      box-shadow: 0 0 0 1px #4b5967;
+      user-select: none;
+    }
+    #canvasWrap canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    #overlayCanvas { cursor: crosshair; }
+    .panel { padding: 14px; }
+    .section { padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .section:first-child { padding-top: 0; }
+    .section:last-child { border-bottom: 0; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .stack { display: grid; gap: 8px; }
+    button, select, input, textarea {
+      font: inherit;
+    }
+    button {
+      border: 1px solid #4b5967;
+      border-radius: 7px;
+      padding: 8px 11px;
+      background: #242d37;
+      color: var(--text);
+      cursor: pointer;
+    }
+    button:hover { background: #303b47; }
+    button:disabled { cursor: not-allowed; opacity: .5; }
+    button.primary { background: #176b48; border-color: var(--green); }
+    button.warn { background: #6d4a12; border-color: var(--yellow); }
+    button.active { outline: 2px solid var(--blue); background: #294760; }
+    input[type="range"] { width: 170px; }
+    textarea {
+      width: 100%;
+      min-height: 70px;
+      resize: vertical;
+      border: 1px solid #4b5967;
+      border-radius: 7px;
+      padding: 8px;
+      color: var(--text);
+      background: #10151b;
+    }
+    label { color: var(--muted); }
+    .flags label { display: block; margin: 5px 0; color: var(--text); }
+    .legend span { display: inline-flex; align-items: center; gap: 5px; margin-right: 12px; }
+    .swatch { width: 13px; height: 13px; border-radius: 3px; display: inline-block; }
+    .host { background: rgba(56, 199, 130, .75); }
+    .symptom { background: rgba(255, 60, 85, .9); }
+    #message {
+      min-height: 42px;
+      padding: 8px;
+      border-radius: 7px;
+      background: #10151b;
+      color: var(--muted);
+      white-space: pre-wrap;
+    }
+    #message.error { color: #ff9aa7; border: 1px solid #8b3542; }
+    #message.ok { color: #91e5ba; border: 1px solid #246f4b; }
+    .help { color: var(--muted); font-size: 12px; }
+    .hidden { display: none !important; }
+    @media (max-width: 1000px) {
+      .layout { grid-template-columns: 1fr; }
+      .viewer { min-height: 480px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PlantSeg · host_gold</h1>
+    <strong id="positionText">Đang tải…</strong>
+    <span class="stats" id="statsText"></span>
+    <span class="stats" id="savedState"></span>
+  </header>
+
+  <main class="layout">
+    <section class="viewer">
+      <div id="canvasWrap">
+        <canvas id="baseCanvas"></canvas>
+        <canvas id="overlayCanvas"></canvas>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <div class="section stack">
+        <div class="legend">
+          <span><i class="swatch host"></i> host đang sửa</span>
+          <span><i class="swatch symptom"></i> symptom_gold</span>
+        </div>
+        <label><input id="showHost" type="checkbox" checked> Hiện host</label>
+        <label><input id="showSymptom" type="checkbox" checked> Hiện triệu chứng</label>
+        <div class="help">Tên bệnh, split và danh tính ảnh lặp được ẩn khỏi giao diện.</div>
+      </div>
+
+      <div class="section stack">
+        <strong>Công cụ vẽ</strong>
+        <div class="row">
+          <button id="addButton" class="active" type="button">Thêm (B)</button>
+          <button id="eraseButton" type="button">Xóa (E)</button>
+          <button id="undoButton" type="button">Undo</button>
+          <button id="redoButton" type="button">Redo</button>
+        </div>
+        <label>Cỡ cọ: <span id="brushValue">25</span> px</label>
+        <input id="brushSize" type="range" min="1" max="150" value="25">
+        <div class="row">
+          <button id="resetButton" type="button">Khôi phục mask ban đầu</button>
+        </div>
+        <div class="help">Kéo chuột để tô. Ctrl+Z để undo; phím B/E đổi chế độ.</div>
+      </div>
+
+      <div class="section stack flags">
+        <strong>Cờ chất lượng nếu có</strong>
+        <label><input type="checkbox" value="occluded_host"> Cơ quan bị che khuất</label>
+        <label><input type="checkbox" value="host_out_of_frame"> Cơ quan ra ngoài khung</label>
+        <label><input type="checkbox" value="multiple_affected_hosts"> Nhiều cơ quan chứa triệu chứng</label>
+        <label><input type="checkbox" value="uncertain_host_boundary"> Biên khó xác định</label>
+        <label><input type="checkbox" value="symptom_label_inconsistency"> Nghi ngờ nhãn triệu chứng</label>
+        <div class="help">Nếu pixel đỏ thực sự nằm trên nền: không tô nền xanh. Chọn cờ trên, ghi chú và lưu. Vùng đỏ là reference khóa nên chỉ có thể ẩn/hiện, không thể xóa.</div>
+        <label><input type="checkbox" value="poor_image_quality"> Chất lượng ảnh kém</label>
+        <textarea id="notes" maxlength="2000" placeholder="Ghi chú ngắn nếu cần"></textarea>
+      </div>
+
+      <div class="section stack">
+        <button id="saveButton" class="primary" type="button">Duyệt và lưu → ảnh chưa xong tiếp theo</button>
+        <button id="uncertainButton" class="warn" type="button">Đánh dấu chưa chắc chắn</button>
+        <div class="row">
+          <button id="prevButton" type="button">← Trước</button>
+          <button id="nextButton" type="button">Sau →</button>
+          <button id="pendingButton" type="button">Ảnh chưa xong tiếp theo</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div id="message">Host phải bao phần nhìn thấy của lá/quả chứa symptom. Pixel đỏ sai trên nền phải được gắn cờ, không được biến nền thành host.</div>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    "use strict";
+
+    const baseCanvas = document.getElementById("baseCanvas");
+    const overlayCanvas = document.getElementById("overlayCanvas");
+    const wrap = document.getElementById("canvasWrap");
+    const baseCtx = baseCanvas.getContext("2d", { alpha: false });
+    const overlayCtx = overlayCanvas.getContext("2d");
+    const maskCanvas = document.createElement("canvas");
+    const symptomCanvas = document.createElement("canvas");
+    const initialCanvas = document.createElement("canvas");
+    const hostTintCanvas = document.createElement("canvas");
+    const symptomTintCanvas = document.createElement("canvas");
+    let item = null;
+    let mode = "add";
+    let drawing = false;
+    let lastPoint = null;
+    let undoStack = [];
+    let redoStack = [];
+    let loadedAt = Date.now();
+    let dirty = false;
+    let busy = false;
+
+    const $ = (id) => document.getElementById(id);
+    const flagInputs = () => [...document.querySelectorAll(".flags input[type=checkbox]")];
+
+    function setMessage(text, kind = "") {
+      const box = $("message");
+      box.textContent = text;
+      box.className = kind;
+    }
+
+    function setBusy(value) {
+      busy = value;
+      for (const button of document.querySelectorAll("button")) button.disabled = value;
+    }
+
+    function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = src;
+      });
+    }
+
+    function configureCanvases(width, height) {
+      for (const canvas of [baseCanvas, overlayCanvas, maskCanvas, symptomCanvas,
+                            initialCanvas, hostTintCanvas, symptomTintCanvas]) {
+        if (canvas.width !== width) canvas.width = width;
+        if (canvas.height !== height) canvas.height = height;
+      }
+      const maxWidth = Math.min(window.innerWidth > 1000 ? window.innerWidth - 390 : window.innerWidth - 50, 1200);
+      const maxHeight = Math.max(420, window.innerHeight - 130);
+      const scale = Math.min(maxWidth / width, maxHeight / height, 1.5);
+      wrap.style.width = `${Math.max(1, Math.round(width * scale))}px`;
+      wrap.style.height = `${Math.max(1, Math.round(height * scale))}px`;
+    }
+
+    function binaryImageToAlphaCanvas(image, canvas) {
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      for (let index = 0; index < pixels.data.length; index += 4) {
+        const enabled = pixels.data[index] >= 128;
+        pixels.data[index] = 255;
+        pixels.data[index + 1] = 255;
+        pixels.data[index + 2] = 255;
+        pixels.data[index + 3] = enabled ? 255 : 0;
+      }
+      ctx.putImageData(pixels, 0, 0);
+    }
+
+    function rebuildTint(source, destination, color) {
+      const ctx = destination.getContext("2d");
+      ctx.globalCompositeOperation = "source-over";
+      ctx.clearRect(0, 0, destination.width, destination.height);
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, destination.width, destination.height);
+      ctx.globalCompositeOperation = "destination-in";
+      ctx.drawImage(source, 0, 0);
+      ctx.globalCompositeOperation = "source-over";
+    }
+
+    function renderOverlay() {
+      rebuildTint(maskCanvas, hostTintCanvas, "rgba(41, 210, 126, 0.42)");
+      overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+      if ($("showHost").checked) overlayCtx.drawImage(hostTintCanvas, 0, 0);
+      if ($("showSymptom").checked) overlayCtx.drawImage(symptomTintCanvas, 0, 0);
+    }
+
+    function maskSnapshot() {
+      return maskCanvas.getContext("2d", { willReadFrequently: true })
+        .getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+    }
+
+    function restoreSnapshot(snapshot) {
+      maskCanvas.getContext("2d").putImageData(snapshot, 0, 0);
+      renderOverlay();
+      dirty = true;
+    }
+
+    function pushUndo() {
+      undoStack.push(maskSnapshot());
+      if (undoStack.length > 20) undoStack.shift();
+      redoStack = [];
+    }
+
+    function undo() {
+      if (!undoStack.length || busy) return;
+      redoStack.push(maskSnapshot());
+      restoreSnapshot(undoStack.pop());
+    }
+
+    function redo() {
+      if (!redoStack.length || busy) return;
+      undoStack.push(maskSnapshot());
+      restoreSnapshot(redoStack.pop());
+    }
+
+    function setMode(next) {
+      mode = next;
+      $("addButton").classList.toggle("active", mode === "add");
+      $("eraseButton").classList.toggle("active", mode === "erase");
+    }
+
+    function canvasPoint(event) {
+      const rect = overlayCanvas.getBoundingClientRect();
+      return {
+        x: (event.clientX - rect.left) * overlayCanvas.width / rect.width,
+        y: (event.clientY - rect.top) * overlayCanvas.height / rect.height,
+      };
+    }
+
+    function drawSegment(from, to) {
+      const ctx = maskCanvas.getContext("2d");
+      const size = Number($("brushSize").value);
+      ctx.save();
+      ctx.globalCompositeOperation = mode === "add" ? "source-over" : "destination-out";
+      ctx.strokeStyle = "rgba(255,255,255,1)";
+      ctx.fillStyle = "rgba(255,255,255,1)";
+      ctx.lineWidth = size;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x, to.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(to.x, to.y, size / 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      renderOverlay();
+      dirty = true;
+    }
+
+    overlayCanvas.addEventListener("pointerdown", (event) => {
+      if (!item || busy) return;
+      event.preventDefault();
+      overlayCanvas.setPointerCapture(event.pointerId);
+      pushUndo();
+      drawing = true;
+      lastPoint = canvasPoint(event);
+      drawSegment(lastPoint, lastPoint);
+    });
+    overlayCanvas.addEventListener("pointermove", (event) => {
+      if (!drawing) return;
+      event.preventDefault();
+      const next = canvasPoint(event);
+      drawSegment(lastPoint, next);
+      lastPoint = next;
+    });
+    const stopDrawing = () => { drawing = false; lastPoint = null; };
+    overlayCanvas.addEventListener("pointerup", stopDrawing);
+    overlayCanvas.addEventListener("pointercancel", stopDrawing);
+
+    function resetMask() {
+      if (!item || busy) return;
+      pushUndo();
+      const ctx = maskCanvas.getContext("2d");
+      ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+      ctx.drawImage(initialCanvas, 0, 0);
+      renderOverlay();
+      dirty = false;
+    }
+
+    function selectedFlags() {
+      return flagInputs().filter((input) => input.checked).map((input) => input.value);
+    }
+
+    function exportMaskPng() {
+      const source = maskCanvas.getContext("2d", { willReadFrequently: true })
+        .getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+      const output = document.createElement("canvas");
+      output.width = maskCanvas.width;
+      output.height = maskCanvas.height;
+      const ctx = output.getContext("2d");
+      const pixels = ctx.createImageData(output.width, output.height);
+      for (let index = 0; index < source.data.length; index += 4) {
+        const enabled = source.data[index + 3] >= 128;
+        const value = enabled ? 255 : 0;
+        pixels.data[index] = value;
+        pixels.data[index + 1] = value;
+        pixels.data[index + 2] = value;
+        pixels.data[index + 3] = 255;
+      }
+      ctx.putImageData(pixels, 0, 0);
+      return output.toDataURL("image/png");
+    }
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, options);
+      const payload = await response.json();
+      if (!response.ok || payload.status === "ERROR") {
+        throw new Error(payload.message || `HTTP ${response.status}`);
+      }
+      return payload;
+    }
+
+    async function loadItem(position = null, pending = false) {
+      if (busy) return;
+      if (dirty && !confirm("Mask hiện tại có thay đổi chưa lưu. Vẫn chuyển ảnh?")) return;
+      setBusy(true);
+      setMessage("Đang tải ảnh…");
+      try {
+        const query = pending ? "?pending=1" : `?position=${position}`;
+        const payload = await api(`/api/item${query}`);
+        if (payload.status === "COMPLETE") {
+          item = null;
+          updateSummary(payload.summary);
+          setMessage("Không còn ảnh pending. Nếu còn ảnh uncertain, dùng nút Trước/Sau để quay lại xử lý.", "ok");
+          return;
+        }
+        item = payload;
+        const [image, symptom, editable] = await Promise.all([
+          loadImage(payload.image),
+          loadImage(payload.symptom_mask),
+          loadImage(payload.editable_mask),
+        ]);
+        configureCanvases(payload.width, payload.height);
+        baseCtx.clearRect(0, 0, payload.width, payload.height);
+        baseCtx.drawImage(image, 0, 0, payload.width, payload.height);
+        binaryImageToAlphaCanvas(symptom, symptomCanvas);
+        binaryImageToAlphaCanvas(editable, maskCanvas);
+        const initialCtx = initialCanvas.getContext("2d");
+        initialCtx.clearRect(0, 0, payload.width, payload.height);
+        initialCtx.drawImage(maskCanvas, 0, 0);
+        rebuildTint(symptomCanvas, symptomTintCanvas, "rgba(255, 49, 79, 0.86)");
+        renderOverlay();
+        undoStack = [];
+        redoStack = [];
+        dirty = false;
+        loadedAt = Date.now();
+        $("positionText").textContent = `Mục ${payload.position} / ${payload.total}`;
+        $("savedState").textContent = `Trạng thái: ${payload.review_status}`;
+        $("notes").value = payload.notes || "";
+        for (const input of flagInputs()) input.checked = payload.quality_flags.includes(input.value);
+        updateSummary(payload.summary);
+        let notice = "Kiểm tra toàn bộ biên host rồi duyệt. Không tô nền xanh chỉ để chứa nhãn đỏ sai.";
+        if (payload.initial_symptom_union_pixels > 0 && payload.review_status === "pending") {
+          notice += `\nCông cụ đã tạm hợp ${payload.initial_symptom_union_pixels} pixel symptom bị pseudo-mask bỏ sót; cần kiểm tra kỹ vùng này.`;
+        }
+        setMessage(notice);
+      } catch (error) {
+        setMessage(error.message, "error");
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    function updateSummary(summary) {
+      $("statsText").textContent = `Đã duyệt ${summary.approved} · Chưa chắc ${summary.uncertain} · Pending ${summary.pending}`;
+    }
+
+    async function saveCurrent() {
+      if (!item || busy) return;
+      setBusy(true);
+      setMessage("Đang kiểm tra và lưu mask…");
+      let nextPosition = null;
+      try {
+        const payload = await api("/api/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            annotation_item_id: item.annotation_item_id,
+            mask_png: exportMaskPng(),
+            quality_flags: selectedFlags(),
+            notes: $("notes").value,
+            elapsed_seconds: (Date.now() - loadedAt) / 1000,
+          }),
+        });
+        dirty = false;
+        updateSummary(payload.summary);
+        setMessage(`Đã lưu: ${payload.decision}`, "ok");
+        nextPosition = payload.next_position;
+        if (!nextPosition) setMessage("Toàn bộ hàng đợi đã có quyết định. Chạy lệnh validate để khóa kết quả.", "ok");
+      } catch (error) {
+        setMessage(error.message, "error");
+      } finally {
+        setBusy(false);
+      }
+      if (nextPosition) await loadItem(nextPosition);
+    }
+
+    async function markUncertain() {
+      if (!item || busy) return;
+      if (!$("notes").value.trim() && selectedFlags().length === 0) {
+        setMessage("Hãy chọn ít nhất một cờ hoặc ghi lý do trước khi đánh dấu chưa chắc chắn.", "error");
+        return;
+      }
+      setBusy(true);
+      let nextPosition = null;
+      try {
+        const payload = await api("/api/uncertain", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            annotation_item_id: item.annotation_item_id,
+            quality_flags: selectedFlags(),
+            notes: $("notes").value,
+            elapsed_seconds: (Date.now() - loadedAt) / 1000,
+          }),
+        });
+        dirty = false;
+        updateSummary(payload.summary);
+        nextPosition = payload.next_position;
+        if (!nextPosition) setMessage("Không còn ảnh pending; cần quay lại giải quyết các ảnh uncertain.", "ok");
+      } catch (error) {
+        setMessage(error.message, "error");
+      } finally {
+        setBusy(false);
+      }
+      if (nextPosition) await loadItem(nextPosition);
+    }
+
+    $("addButton").addEventListener("click", () => setMode("add"));
+    $("eraseButton").addEventListener("click", () => setMode("erase"));
+    $("undoButton").addEventListener("click", undo);
+    $("redoButton").addEventListener("click", redo);
+    $("resetButton").addEventListener("click", resetMask);
+    $("saveButton").addEventListener("click", saveCurrent);
+    $("uncertainButton").addEventListener("click", markUncertain);
+    $("prevButton").addEventListener("click", () => item && loadItem(Math.max(1, item.position - 1)));
+    $("nextButton").addEventListener("click", () => item && loadItem(Math.min(item.total, item.position + 1)));
+    $("pendingButton").addEventListener("click", () => loadItem(null, true));
+    $("showHost").addEventListener("change", renderOverlay);
+    $("showSymptom").addEventListener("change", renderOverlay);
+    $("brushSize").addEventListener("input", () => $("brushValue").textContent = $("brushSize").value);
+
+    document.addEventListener("keydown", (event) => {
+      if (event.target.matches("textarea,input")) return;
+      if (event.ctrlKey && event.key.toLowerCase() === "z") { event.preventDefault(); undo(); }
+      else if (event.ctrlKey && event.key.toLowerCase() === "y") { event.preventDefault(); redo(); }
+      else if (event.key.toLowerCase() === "b") setMode("add");
+      else if (event.key.toLowerCase() === "e") setMode("erase");
+    });
+
+    window.addEventListener("beforeunload", (event) => {
+      if (dirty) { event.preventDefault(); event.returnValue = ""; }
+    });
+    window.addEventListener("resize", () => item && configureCanvases(item.width, item.height));
+    loadItem(null, true);
+  </script>
+</body>
+</html>

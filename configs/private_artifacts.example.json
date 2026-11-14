@@ -1,0 +1,82 @@
+{
+  "schema_version": 2,
+  "notice": "Exact numerical reproduction requires author-provided private artifacts. Replace every placeholder SHA-256 after receiving the bundle.",
+  "artifacts": [
+    {
+      "name": "prepared_dataset_tree",
+      "path": "data/plantseg",
+      "kind": "directory",
+      "sha256": "REPLACE_WITH_AUTHOR_PROVIDED_SHA256"
+    },
+    {
+      "name": "private_bundle_tree",
+      "path": "artifacts/private",
+      "kind": "directory",
+      "sha256": "REPLACE_WITH_AUTHOR_PROVIDED_SHA256"
+    },
+    {
+      "name": "tomato_manifest",
+      "path": "artifacts/private/manifests/tomato_manifest.csv",
+      "kind": "csv",
+      "expected_records": 881,
+      "sha256": "REPLACE_WITH_AUTHOR_PROVIDED_SHA256"
+    },
+    {
+      "name": "label_review_decisions",
+      "path": "artifacts/private/manifests/label_review_decisions.csv",
+      "kind": "csv",
+      "expected_records": 148,
+      "sha256": "REPLACE_WITH_AUTHOR_PROVIDED_SHA256"
+    },
+    {
+      "name": "pseudo_host_manifest",
+      "path": "artifacts/private/manifests/pseudo_host_manifest.csv",
+      "kind": "csv",
+      "expected_records": 881,
+      "sha256": "REPLACE_WITH_AUTHOR_PROVIDED_SHA256"
+    },
+    {
+      "name": "manual_host_manifest",
+      "path": "artifacts/private/manifests/manual_host_manifest.csv",
+      "kind": "csv",
+      "expected_records": 881,
+      "sha256": "REPLACE_WITH_AUTHOR_PROVIDED_SHA256"
+    },
+    {
+      "name": "gold_host_manifest",
+      "path": "artifacts/private/manifests/host_gold_final_manifest.csv",
+      "kind": "csv",
+      "expected_records": 261,
+      "sha256": "REPLACE_WITH_AUTHOR_PROVIDED_SHA256"
+    },
+    {
+      "name": "pretraining_manifest",
+      "path": "artifacts/private/manifests/pretraining_manifest.csv",
+      "kind": "csv",
+      "expected_records": 7580,
+      "sha256": "REPLACE_WITH_AUTHOR_PROVIDED_SHA256"
+    },
+    {
+      "name": "paper_model_sources",
+      "path": "artifacts/private/model_sources.json",
+      "kind": "json",
+      "expected_records": 24,
+      "path_values_are_files": "checkpoint",
+      "sha256": "REPLACE_WITH_AUTHOR_PROVIDED_SHA256"
+    },
+    {
+      "name": "paper_checkpoints",
+      "path": "artifacts/private/checkpoints",
+      "kind": "directory",
+      "expected_files": 24,
+      "sha256": "REPLACE_WITH_AUTHOR_PROVIDED_SHA256"
+    },
+    {
+      "name": "locked_per_image_outputs",
+      "path": "artifacts/private/locked_outputs",
+      "kind": "directory",
+      "sha256": "REPLACE_WITH_AUTHOR_PROVIDED_SHA256"
+    }
+  ]
+}
+

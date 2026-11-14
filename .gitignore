@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+build/
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+.pytest_cache/
+.pytest_tmp/
+.pytest_tmp*/
+
+# Data, checkpoints and run outputs (never commit)
+data/
+artifacts/
+*.zip
+*.rar
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.npz
+*.npy
+runs/
+outputs/
+configs/private_artifacts.json
+fp32v2_state*/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

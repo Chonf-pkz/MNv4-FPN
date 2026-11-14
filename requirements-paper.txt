@@ -1,0 +1,7 @@
+# Core versions printed by the final Kaggle protocol. CUDA-enabled PyTorch was
+# supplied by the Kaggle image; this file records provenance and is not a full
+# operating-system or transitive-dependency lock.
+torch==2.11.0
+timm==1.0.29
+segmentation-models-pytorch==0.5.0
+onnxruntime==1.30.0

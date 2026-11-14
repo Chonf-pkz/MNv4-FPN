@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the associated paper. Add the venue and DOI after publication."
+title: "Quantization-Friendly Lesion and Host Segmentation for Tomato Disease Burden: INT8 Deployment and Error Analysis"
+type: software
+version: 1.0.0
+date-released: 2026-10-15
+license: Apache-2.0
+repository-code: "https://github.com/Chonf-pkz/MNv4-FPN"
+authors:
+  - family-names: "Le"
+    given-names: "Nhat Khanh"
+    orcid: "https://orcid.org/0009-0009-3832-4661"
+  - family-names: "Nguyen"
+    given-names: "Vu Minh Anh"
+    orcid: "https://orcid.org/0009-0007-8206-3329"
+  - family-names: "Bui"
+    given-names: "Danh Huong"

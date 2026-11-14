@@ -1,0 +1,2 @@
+-e .[baselines,quality]
+gdown>=5.2,<6

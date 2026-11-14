@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tomato-burden-ptq"
+version = "1.0.0"
+description = "FP32 lesion/host segmentation and static INT8 PTQ for tomato disease burden estimation"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {file = "LICENSE"}
+authors = [
+  {name = "Nhat Khanh Le"},
+  {name = "Vu Minh Anh Nguyen"},
+  {name = "Danh Huong Bui"},
+]
+dependencies = [
+  "numpy>=2.0,<3",
+  "Pillow>=10.4,<13",
+  "scipy>=1.13,<2",
+  "scikit-learn>=1.5,<2",
+  "torch>=2.10,<2.12",
+  "torchvision>=0.25,<0.27",
+  "timm>=1.0,<1.1",
+  "onnx>=1.17,<2",
+  "onnxruntime>=1.20,<1.31",
+]
+
+[project.optional-dependencies]
+baselines = ["segmentation-models-pytorch==0.5.0"]
+quality = ["cleanlab>=2.6,<3"]
+test = ["pytest>=8.3,<9"]
+
+[project.scripts]
+tomato-train = "tomato_burden.training:main"
+tomato-baselines = "tomato_burden.baselines:main"
+tomato-paper = "tomato_burden.paper_pipeline:main"
+tomato-label-quality = "tomato_burden.label_quality:main"
+tomato-cv-summary = "tomato_burden.cv_summary:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

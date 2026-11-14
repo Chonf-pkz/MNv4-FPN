@@ -1,0 +1,88 @@
+{
+  "run_name": "mnv4m_fpn512_base",
+  "seed": 20260924,
+  "device": "cuda",
+  "amp": true,
+  "num_workers": 4,
+  "input_size": 512,
+  "ema_decay": 0.999,
+  "gradient_clip_norm": 1.0,
+  "oof_map_size": 256,
+  "focal_classes": [
+    "tomato_bacterial_leaf_spot",
+    "tomato_early_blight",
+    "tomato_late_blight",
+    "tomato_leaf_mold",
+    "tomato_septoria_leaf_spot"
+  ],
+  "paths": {
+    "dataset_root": "data/plantseg",
+    "input_root": "artifacts/private",
+    "tomato_manifest": "artifacts/private/manifests/tomato_manifest.csv",
+    "pseudo_host_manifest": "artifacts/private/manifests/pseudo_host_manifest.csv",
+    "pretraining_manifest": "artifacts/private/manifests/pretraining_manifest.csv",
+    "review_csv": "artifacts/private/manifests/label_review_decisions.csv",
+    "cache_root": "artifacts/cache",
+    "output_root": "artifacts/runs",
+    "host_gold_manifest": "artifacts/private/manifests/host_gold_final_manifest.csv",
+    "host_gold_root": "artifacts/private"
+  },
+  "cache": {"max_side": 1024, "workers": 4},
+  "cross_validation": {"folds": 5, "seed": 20260924},
+  "model": {
+    "backbone": "mobilenetv4_conv_medium.e250_r384_in12k_ft_in1k",
+    "pretrained": true,
+    "dropout": 0.2,
+    "symptom_guided_pooling": true
+  },
+  "augmentation": {
+    "scale_range": [0.75, 2.0],
+    "vflip_probability": 0.5,
+    "rotation_degrees": 30,
+    "rotation_probability": 0.5,
+    "color_jitter": {"brightness": 0.3, "contrast": 0.3, "saturation": 0.3, "hue": 0.03},
+    "blur_probability": 0.2
+  },
+  "loss": {
+    "disease_weight": 0.0,
+    "symptom_weight": 1.0,
+    "host_weight": 0.5,
+    "burden_weight": 0.25,
+    "containment_weight": 0.1,
+    "bce_fraction": 0.5,
+    "dice_fraction": 0.5
+  },
+  "label_noise": {
+    "boundary_radius": 2,
+    "host_boundary_radius": 4,
+    "boundary_band_weight": 0.3,
+    "label_smoothing": 0.1,
+    "bootstrap_beta": 0.0,
+    "bootstrap_start_fraction": 0.4
+  },
+  "source_stage": {
+    "enabled": true,
+    "epochs": 30,
+    "batch_size": 16,
+    "backbone_lr": 0.0004,
+    "head_lr": 0.001,
+    "weight_decay": 0.01,
+    "warmup_epochs": 2,
+    "min_lr_ratio": 0.01,
+    "disease_weight": 0.5,
+    "monitor_every": 5
+  },
+  "target_stage": {
+    "epochs": 120,
+    "batch_size": 8,
+    "backbone_lr": 0.0002,
+    "head_lr": 0.0006,
+    "weight_decay": 0.01,
+    "warmup_epochs": 5,
+    "min_lr_ratio": 0.01,
+    "monitor_every": 20,
+    "recalibrate_bn": false,
+    "recalibrate_bn_batches": 60
+  },
+  "cotraining": {"enabled": true, "batch_size": 8, "symptom_weight": 0.5}
+}

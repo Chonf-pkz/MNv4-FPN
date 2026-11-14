@@ -1,0 +1,29 @@
+{
+  "protocol": "TOMATO-BURDEN-HOST-TRAIN-20260929-v1",
+  "config_path": "host_train_annotation_config.json",
+  "annotation_script": "annotate_plantseg_host_gold.py",
+  "annotation_ui": "host_gold_annotation_ui.html",
+  "source_manifest": "host_train/host_train_source_manifest.csv",
+  "queue_manifest": "host_train/host_train_queue.csv",
+  "annotation_manifest": "host_train/host_train_manifest.csv",
+  "queue_lock": "host_train/host_train_queue_lock.json",
+  "event_log": "host_train/host_train_events.jsonl",
+  "validation_report": "host_train/host_train_validation_report.json",
+  "completion_lock": "host_train/host_train_lock.json",
+  "primary_output_dir": "host_train/masks",
+  "repeat_output_dir": "host_train/repeat_masks",
+  "revision_output_dir": "host_train/revisions",
+  "evaluation_splits": [
+    "train"
+  ],
+  "expected_unique_records": 199,
+  "expected_validation_records": 0,
+  "expected_test_records": 0,
+  "expected_classes": 7,
+  "blind_repeats_per_class": 0,
+  "queue_seed": 2026092901,
+  "annotator_id": "annotator_A",
+  "bind_host": "127.0.0.1",
+  "port": 7861,
+  "open_browser": true
+}
